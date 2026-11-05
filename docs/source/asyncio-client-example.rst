@@ -32,6 +32,28 @@ application handling large bodies should consume chunks as they arrive and
 acknowledge them after consumption; one reusing a connection must manage the
 lifetimes of its individual streams as well as the connection.
 
+The current example server has an expired self-signed certificate which
+the example client rejects during SSL verification. add argument ``-k``
+or ``--insecure`` *a la* `curl <https://curl.se/docs/sslcerts.html>`__
+to the client invocation to skip these checks:
+
+.. code:: bash
+
+   python3 asyncio-client.py --port=8443 --insecure 127.0.0.1
+
+The certificate expiry can be refreshed:
+
+.. code:: bash
+
+   openssl req -newkey rsa:2048 -x509 -days 365 -keyout cert.key -out cert.crt -nodes -subj '/C=AU/ST=Some-State/O=Internet Widgits Pty Ltd/CN=localhost'
+   python3 asyncio-server.py
+
+Add argument ``--cacert`` to use this certificate:
+
+.. code:: bash
+
+   python3 asyncio-client.py --port=8443 --cacert=cert.crt 127.0.0.1
+
 .. literalinclude:: ../../examples/asyncio/asyncio-client.py
    :language: python
    :linenos:
