@@ -197,7 +197,11 @@ ssl_context.options |= (
 ssl_context.load_cert_chain(certfile="cert.crt", keyfile="cert.key")
 ssl_context.set_alpn_protocols(["h2"])
 
-loop = asyncio.get_event_loop()
+try:
+    loop = asyncio.get_event_loop()
+except RuntimeError:
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
 # Each client connection will create a new protocol instance
 coro = loop.create_server(H2Protocol, '127.0.0.1', 8443, ssl=ssl_context)
 server = loop.run_until_complete(coro)
