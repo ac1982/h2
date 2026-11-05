@@ -90,13 +90,29 @@ async def get(host, port=443, path="/", *, context=None):
 
 
 def main():
+    context = None
+
+    def cacert(path: str | None) -> None:
+        nonlocal context
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        context.check_hostname = False
+        if path is None:
+            context.verify_mode = ssl.CERT_NONE
+        else:
+            context.verify_mode = ssl.CERT_OPTIONAL
+            context.load_verify_locations(path)
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("host")
     parser.add_argument("path", nargs="?", default="/")
     parser.add_argument("--port", type=int, default=443)
+    parser.add_argument("-k", "--insecure", action="store_true", help="Disable TLS verification")
+    parser.add_argument("--cacert", type=cacert, help="Path to CA cert file")
     args = parser.parse_args()
+    if args.insecure:
+        cacert(None)
     headers, body, trailers = asyncio.run(asyncio.wait_for(
-        get(args.host, args.port, args.path), timeout=15,
+        get(args.host, args.port, args.path, context=context), timeout=15,
     ))
     for name, value in headers + trailers:
         print(f"{name}: {value}", file=sys.stderr)
